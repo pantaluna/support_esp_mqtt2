@@ -1,0 +1,24 @@
+#*******************************************************************************
+# Espressif ESP32 Partition Table
+# Note: if you change the phy_init or app partition offset,make sure to change the offset in Kconfig.projbuild
+# @important SPIFFS partition max size = 1MB
+# @doc Omitting Offset means it is just after the previous partition (and properly aligned)
+#
+#	HEX	        Bytes	  KB
+#	0x9000	    36864	  36
+#	0xF000	    61440	  60
+#	0x10000	    65536	  64
+#	0x6000	    24576	  24
+#	0x1000	     4096	   4
+#	0x100000  1048576	1024
+#
+# Name, 	Type, 	SubType, 	Offset, 	Size, 	Flags
+nvs,		data,	nvs,		0x9000,		24K,
+phy_init,	data,	phy,		0xf000,		4K,
+factory,	app,	factory,	0x10000,	1M,
+#
+#myspiffs,	data,	spiffs,		,			64K,
+#myspiffs,	data,	spiffs,		,			512K,
+myspiffs,	data,	spiffs,		,			1M,
+#myspiffs,	data,	spiffs,		,			2M,
+#
