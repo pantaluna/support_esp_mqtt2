@@ -17,15 +17,15 @@
 #include "mjd_wifi.h"
 
 /*
+ * Logging
+ */
+static const char TAG[] = "myapp";
+
+/*
  * FreeRTOS settings
  */
 #define MYAPP_RTOS_TASK_STACK_SIZE_HUGE (32768)
 #define MYAPP_RTOS_TASK_PRIORITY_NORMAL (RTOS_TASK_PRIORITY_NORMAL)
-
-/*
- * Logging
- */
-static const char TAG[] = "myapp";
 
 /*
  * KConfig: WIFI
@@ -34,33 +34,36 @@ char *WIFI_SSID = CONFIG_MY_WIFI_SSID;
 char *WIFI_PASSWORD = CONFIG_MY_WIFI_PASSWORD;
 
 /*
+ * LOOP Settings
+ */
+#define MJD_SPIFF_WRITE_NBR_OF_LINES (5000)
+
+/*
  * MQTT
  */
-#define MY_MQTT_HOST "broker.shiftr.io"
-#define MY_MQTT_PORT 1883
-#define MY_MQTT_USER "try"
-#define MY_MQTT_PASS "try"
-
-/*#define MY_MQTT_HOST "192.168.0.95" // @important The DNS name "s3..." does not work on an MCU@HomeLAN because it returns the ISP's WAN IP and this IP is not whitelisted in Ubuntu UFW!
-#define MY_MQTT_PORT 12430
-#define MY_MQTT_USER "uuuuu"
-#define MY_MQTT_PASS "ppppp"*/
-
-#define MY_MQTT_BUFFER_SIZE  (4096)  // @suggested 256 @used 4096
+#define MY_MQTT_BUFFER_SIZE  (4096)  // @suggested 256 @used 4096 (max payload length)
 #define MY_MQTT_TIMEOUT      (2000)  // @suggested 2000 @used 2000
+
+/*#define MY_MQTT_HOST "broker.shiftr.io"
+#define MY_MQTT_PORT "1883"
+#define MY_MQTT_USER "try"
+#define MY_MQTT_PASS "try"*/
+
+#define MY_MQTT_HOST "192.168.0.95" // @important The DNS name "s3..." does not work on an MCU@HomeLAN because it returns the ISP's WAN IP and this IP is not whitelisted in Ubuntu UFW!
+#define MY_MQTT_PORT "12430"
+#define MY_MQTT_USER "zurich"
+#define MY_MQTT_PASS "swiss"
+
 
 static EventGroupHandle_t mqtt_event_group;
 static const int MQTT_CONNECTED_BIT = BIT0;
-static const int MQTT_DISCONNECTED_BIT = BIT1;
 
 static void mqtt_status_callback(esp_mqtt_status_t status) {
     switch (status) {
     case ESP_MQTT_STATUS_CONNECTED:
         xEventGroupSetBits(mqtt_event_group, MQTT_CONNECTED_BIT);
-        xEventGroupClearBits(mqtt_event_group, MQTT_DISCONNECTED_BIT);
         break;
     case ESP_MQTT_STATUS_DISCONNECTED: // @important This bitflag is not set when stopping mqtt (only when an active netconn is ABORTED)...
-        xEventGroupSetBits(mqtt_event_group, MQTT_DISCONNECTED_BIT);
         xEventGroupClearBits(mqtt_event_group, MQTT_CONNECTED_BIT);
         break;
     }
@@ -221,11 +224,10 @@ void main_task(void *pvParameter) {
     char dashes[128 + 1] = "";
     memset(dashes, '-', 128);
 
-    const uint32_t MAX_COUNTER_APPEND = 5000;
-    ESP_LOGI(TAG, "  Adding %i lines...", MAX_COUNTER_APPEND);
+    ESP_LOGI(TAG, "  Adding %i lines...", MJD_SPIFF_WRITE_NBR_OF_LINES);
 
     uint32_t counter_append = 1;
-    while (counter_append <= MAX_COUNTER_APPEND) {
+    while (counter_append <= MJD_SPIFF_WRITE_NBR_OF_LINES) {
         // Write to SPIFFS
         printf(".");
         fflush(stdout);
@@ -291,12 +293,11 @@ void main_task(void *pvParameter) {
     xEventGroupWaitBits(mqtt_event_group, MQTT_CONNECTED_BIT, false, true, portMAX_DELAY);
 
     static const int QOS_1 = 1;
-    char topic[128] = "esp32registry/device/churchstreet/log";
+    char topic[] = "hello";
     char payload[1024] = "";
     uint32_t cur_line;
 
-    mjd_log_memory_statistics();
-
+    ESP_LOGI(TAG, "ENDLESS LOOP: file text lines -> mqqt publish");
     while (1) {
         // Open log file
         ESP_LOGI(TAG, "open log file");
@@ -309,25 +310,29 @@ void main_task(void *pvParameter) {
 
         mjd_log_memory_statistics();
 
+        ESP_LOGI(TAG, "MQTT info: LOOP mqtt publish:");
+
         cur_line = 0;
         while (fgets(payload, sizeof(payload), _log_fp) != NULL) {
             ++cur_line;
-            ESP_LOGI(TAG, "MQTT: LOOP#%i", cur_line);
+            printf("#%i ", cur_line); fflush(stdout);
 
             /////ESP_LOGI(TAG, "  esp_mqtt_publish(): topic (%i) %s => payload (%i) %s\n", strlen(topic), topic, strlen(payload), payload);
 
-            mjd_log_memory_statistics();
+            /////mjd_log_memory_statistics();
 
             bretval = esp_mqtt_publish((char *) topic, (uint8_t *) payload, strlen(payload), QOS_1, false);
             if (bretval == false) {
                 ESP_LOGE(TAG, "  ABORT. esp_mqtt_publish() failed");
+                mjd_log_memory_statistics();
                 // GOTO
                 goto section_cleanup;
             }
 
-            // @question yield a little to give time to other tasks?
-            /////vTaskDelay(RTOS_DELAY_10MILLISEC);
+            // @question is it required to yield a little to give time to other tasks?
+            vTaskDelay(RTOS_DELAY_1MILLISEC);
         }
+        printf("\n");
 
         // close file
         ESP_LOGI(TAG, "  Close file");
@@ -346,6 +351,7 @@ void main_task(void *pvParameter) {
     esp_mqtt_stop();
 
     mjd_wifi_sta_disconnect_stop();
+
 
     /********************************************************************************
      * Task Delete

@@ -1,10 +1,10 @@
 https://github.com/pantaluna/support_esp_mqtt2
-https://github.com/256dpi/esp-mqtt/issues/xxx
+https://github.com/256dpi/esp-mqtt/
 
-esp-mqtt V0.4.4 (or v0.5.1+ when it works?)
+esp-mqtt
  
-# 1. esp_mqtt_publish() SOMETIMES returns err LWMQTT_MISSING_OR_WRONG_PACKET (-9) during an endurance test of publishing 100-200000 messages.
-The program creates a text file of 5000 lines in a SPIFFS partition, and then mqtt publishes each text line to a mqtt server, and repeats this until an error occurs.
+# 1. esp_mqtt_publish() sometimes returns err LWMQTT_MISSING_OR_WRONG_PACKET (-9) during an endurance test of publishing 1000-200000 messages.
+The program creates a text file of 5000 lines on a SPIFFS partition, and then mqtt publishes each text line to a mqtt server, and repeats this until an error occurs.
 The moment of the fatal error varies, it can be during sending the 100th message or the 50000th message or never; it is always a different moment.
 The error is always the same: "esp_mqtt: lwmqtt_publish: -9". I think -9 means LWMQTT_MISSING_OR_WRONG_PACKET.
 
@@ -47,8 +47,8 @@ E (146844) esp_mqtt: lwmqtt_publish: -9
 - MCU: Wemos LOLIN32 Lite development board.
 
 ## Software
-- ESP-IDF Github master branch of Apr 4, 2018.
-- esp-mqtt V.0.4.4
+- ESP-IDF Github master branch of Apr 21, 2018.
+- esp-mqtt V.0.5.2
 
 #.
 # APPENDICES
@@ -72,7 +72,8 @@ typedef enum {
   LWMQTT_PONG_TIMEOUT = -13,
 } lwmqtt_err_t;
 
-# Get esp-mqtt V0.5.1
+
+# Get esp-mqtt from Github
 
 ### INITIAL CLONE
 
@@ -84,22 +85,29 @@ git clone --recursive https://github.com/256dpi/esp-mqtt.git
 cd esp-mqtt
 git status
 
-### Checkout tag v.0.4.4
+### Checkout tag v0.5.4
 cd  /c/myiot/esp/support_esp_mqtt2/components/esp-mqtt
+git pull
+git submodule update --init --recursive
+git status
+
 git tag --list
-git checkout tags/v0.4.4
+git checkout tags/v0.5.4
 git describe --tags
 git submodule update --init --recursive
 git status
 
-### [ONHOLD] Checkout tag v.0.5.1
-###   @IMPORTANT bug report https://github.com/256dpi/esp-mqtt/issues/13 MQTT connection works, publish fails - v0.4.4 OK, v 0.5.1 FAILS
-/*cd  /c/myiot/esp/support_esp_mqtt2/components/esp-mqtt
-git tag --list
-git checkout tags/v0.5.1
-git describe --tags
+### [UNSTABLE] Checkout branch idf3
+cd  /c/myiot/esp/support_esp_mqtt2/components/esp-mqtt
+git pull
 git submodule update --init --recursive
-git status*/
+git status
+
+git branch
+git checkout idf3
+git show-branch
+git submodule update --init --recursive
+git status
 
 
 # SOP upload to GITHUB
@@ -121,10 +129,10 @@ git remote add origin https://github.com/pantaluna/support_esp_mqtt2.git
 git push --set-upstream origin master
 
 git remote show origin
-git status
 
 git tag --annotate v1.0 --message "The original bug report"
 git push origin --tags
+git status
 
 ```
 

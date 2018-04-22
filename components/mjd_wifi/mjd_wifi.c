@@ -19,7 +19,7 @@ static EventGroupHandle_t wifi_event_group;
 static const int WIFI_CONNECTED_BIT = BIT0;
 static const int WIFI_DISCONNECTED_BIT = BIT1;
 
-static uint32_t total_nbr_of_connect_errors = 0;
+static uint32_t total_nbr_of_fatal_connect_errors = 0;
 static uint32_t total_nbr_of_first_connect_errors = 0;
 
 ip4_addr_t ip;
@@ -132,72 +132,81 @@ static IRAM_ATTR esp_err_t mjd_wifi_sta_event_handler(void *ctx, system_event_t 
 /*********************************************************************************
  * PUBLIC
  *********************************************************************************/
-
 esp_err_t mjd_wifi_sta_init(const char *param_ssid, const char *param_password) {
     ESP_LOGD(TAG, "%s()", __FUNCTION__);
 
-    esp_err_t retval = ESP_OK;
+    esp_err_t f_retval = ESP_OK;
 
-    esp_log_level_set("wifi", ESP_LOG_WARN); // @important Disable INFO messages to lower cpu usage of the wifi component (Wifi on core0 easily conflicts with other components such as RMT on core1!).
+    esp_log_level_set("wifi", ESP_LOG_WARN); // @important Disable INFO messages which are too detailed for me.
+    esp_log_level_set("tcpip_adapter", ESP_LOG_WARN); // @important Disable INFO messages which are too detailed for me.
 
     wifi_event_group = xEventGroupCreate();
-    tcpip_adapter_init();
 
-    retval = esp_event_loop_init(mjd_wifi_sta_event_handler, NULL);
-    if (retval != ESP_OK) {
-        ESP_LOGE(TAG, "esp_event_loop_init() err %d %s", retval, esp_err_to_name(retval));
-        return retval; // EXIT
+    f_retval = esp_event_loop_init(mjd_wifi_sta_event_handler, NULL);
+    if (f_retval != ESP_OK) {
+        ESP_LOGE(TAG, "esp_event_loop_init() err %d %s", f_retval, esp_err_to_name(f_retval));
+        // GOTO
+        goto cleanup;
     }
+
+    tcpip_adapter_init();
 
     wifi_init_config_t wifi_init_config = WIFI_INIT_CONFIG_DEFAULT()
     ;
 
-    retval = esp_wifi_init(&wifi_init_config);
-    if (retval != ESP_OK) {
-        ESP_LOGE(TAG, "esp_wifi_init() err %d %s", retval, esp_err_to_name(retval));
-        return retval; // EXIT
+    f_retval = esp_wifi_init(&wifi_init_config);
+    if (f_retval != ESP_OK) {
+        ESP_LOGE(TAG, "esp_wifi_init() err %d %s", f_retval, esp_err_to_name(f_retval));
+        // GOTO
+        goto cleanup;
     }
 
-    retval = esp_wifi_set_storage(WIFI_STORAGE_RAM);
-    if (retval != ESP_OK) {
-        ESP_LOGE(TAG, "esp_wifi_set_storage() err %d %s", retval, esp_err_to_name(retval));
-        return retval; // EXIT
+    f_retval = esp_wifi_set_storage(WIFI_STORAGE_RAM);
+    if (f_retval != ESP_OK) {
+        ESP_LOGE(TAG, "esp_wifi_set_storage() err %d %s", f_retval, esp_err_to_name(f_retval));
+        // GOTO
+        goto cleanup;
     }
 
-    retval = esp_wifi_set_mode(WIFI_MODE_STA);
-    if (retval != ESP_OK) {
-        ESP_LOGE(TAG, "esp_wifi_set_mode() err %d %s", retval, esp_err_to_name(retval));
-        return retval; // EXIT
+    f_retval = esp_wifi_set_mode(WIFI_MODE_STA);
+    if (f_retval != ESP_OK) {
+        ESP_LOGE(TAG, "esp_wifi_set_mode() err %d %s", f_retval, esp_err_to_name(f_retval));
+        // GOTO
+        goto cleanup;
     }
 
     wifi_config_t wifi_config = { 0 };    // init struct fields for this variable
-
     strcpy((char *) wifi_config.sta.ssid, param_ssid);  // (to,from)
     strcpy((char *) wifi_config.sta.password, param_password);  // (to,from)
 
-    retval = esp_wifi_set_config(ESP_IF_WIFI_STA, &wifi_config);
-    if (retval != ESP_OK) {
-        ESP_LOGE(TAG, "esp_wifi_set_config() err %d %s", retval, esp_err_to_name(retval));
-        return retval; // EXIT
+    f_retval = esp_wifi_set_config(ESP_IF_WIFI_STA, &wifi_config);
+    if (f_retval != ESP_OK) {
+        ESP_LOGE(TAG, "esp_wifi_set_config() err %d %s", f_retval, esp_err_to_name(f_retval));
+        // GOTO
+        goto cleanup;
     }
 
     ESP_LOGI(TAG, "OK: WIFI initialized!");
 
-    return ESP_OK;
+    // LABEL
+    cleanup:;
+
+    return f_retval;
 }
 
 esp_err_t mjd_wifi_sta_start() {
     ESP_LOGD(TAG, "%s()", __FUNCTION__);
 
-    esp_err_t retval = ESP_OK;
+    esp_err_t f_retval = ESP_OK;
 
     EventBits_t uxBits;
 
     ESP_LOGI(TAG, "Connecting to the WIFI network...");
-    retval = esp_wifi_start();
-    if (retval != ESP_OK) {
-        ESP_LOGE(TAG, "esp_wifi_start() err %d %s", retval, esp_err_to_name(retval));
-        return retval; // EXIT
+    f_retval = esp_wifi_start();
+    if (f_retval != ESP_OK) {
+        ESP_LOGE(TAG, "esp_wifi_start() err %d %s", f_retval, esp_err_to_name(f_retval));
+        // GOTO
+        goto cleanup;
     }
 
     uxBits = xEventGroupWaitBits(wifi_event_group, WIFI_CONNECTED_BIT, pdFALSE, pdTRUE, RTOS_DELAY_15SEC); // RTOS_DELAY_10SEC RTOS_DELAY_15SEC
@@ -206,29 +215,33 @@ esp_err_t mjd_wifi_sta_start() {
 
         total_nbr_of_first_connect_errors++;
 
-        retval = esp_wifi_stop();
-        if (retval != ESP_OK) {
-            ESP_LOGE(TAG, "esp_wifi_stop() err %d %s", retval, esp_err_to_name(retval));
-            return retval; // EXIT
+        f_retval = esp_wifi_stop();
+        if (f_retval != ESP_OK) {
+            ESP_LOGE(TAG, "esp_wifi_stop() err %d %s", f_retval, esp_err_to_name(f_retval));
+            // GOTO
+            goto cleanup;
         }
 
-        vTaskDelay(RTOS_DELAY_15SEC); // @important
+        vTaskDelay(RTOS_DELAY_15SEC); // @important delay
 
-        retval = esp_wifi_start();
-        if (retval != ESP_OK) {
-            ESP_LOGE(TAG, "esp_wifi_start() err %d %s", retval, esp_err_to_name(retval));
-            return retval; // EXIT
+        f_retval = esp_wifi_start();
+        if (f_retval != ESP_OK) {
+            ESP_LOGE(TAG, "esp_wifi_start() err %d %s", f_retval, esp_err_to_name(f_retval));
+            // GOTO
+            goto cleanup;
         }
 
         uxBits = xEventGroupWaitBits(wifi_event_group, WIFI_CONNECTED_BIT, pdFALSE, pdTRUE, RTOS_DELAY_15SEC); // RTOS_DELAY_10SEC RTOS_DELAY_15SEC
         if ((uxBits & WIFI_CONNECTED_BIT) == 0) {
-            total_nbr_of_connect_errors++;
+        total_nbr_of_fatal_connect_errors++;
 
             ESP_LOGE(TAG, "ERROR: SECOND TIME esp_wifi_start() failed to connect. => ABORT");
-            ESP_LOGI(TAG, "  @doc total_nbr_of_connect_errors:       %u", total_nbr_of_connect_errors);
-            ESP_LOGI(TAG, "  @doc total_nbr_of_first_connect_errors: %u", total_nbr_of_first_connect_errors);
+            ESP_LOGI(TAG, "  @stats total_nbr_of_fatal_connect_errors:       %u", total_nbr_of_fatal_connect_errors);
+            ESP_LOGI(TAG, "  @stats total_nbr_of_first_connect_errors: %u", total_nbr_of_first_connect_errors);
 
-            return MJD_ERR_ESP_WIFI; // EXIT
+            f_retval = MJD_ERR_ESP_WIFI; // mark error code
+            // GOTO
+            goto cleanup;
         }
     }
 
@@ -236,42 +249,53 @@ esp_err_t mjd_wifi_sta_start() {
     ESP_LOGI(TAG, "  IP:       %s", inet_ntoa(ip));
     ESP_LOGI(TAG, "  Net mask: %s", inet_ntoa(msk));
     ESP_LOGI(TAG, "  Gateway:  %s", inet_ntoa(gw));
-    ESP_LOGI(TAG, "  @doc total_nbr_of_connect_errors:       %u", total_nbr_of_connect_errors);
-    ESP_LOGI(TAG, "  @doc total_nbr_of_first_connect_errors: %u", total_nbr_of_first_connect_errors);
+    ESP_LOGI(TAG, "  @stats total_nbr_of_fatal_connect_errors: %u", total_nbr_of_fatal_connect_errors);
+    ESP_LOGI(TAG, "  @stats total_nbr_of_first_connect_errors: %u", total_nbr_of_first_connect_errors);
 
-    return ESP_OK;
+    // LABEL
+    cleanup:;
+
+    return f_retval;
 }
 
 esp_err_t mjd_wifi_sta_disconnect_stop() {
     ESP_LOGD(TAG, "%s()", __FUNCTION__);
 
-    esp_err_t retval = ESP_OK;
+    esp_err_t f_retval = ESP_OK;
 
     EventBits_t uxBits;
 
     ESP_LOGI(TAG, "Disconnecting from WIFI network...");
 
-    retval = esp_wifi_disconnect();
-    if (retval != ESP_OK) {
-        ESP_LOGE(TAG, "esp_wifi_connect() err %d %s", retval, esp_err_to_name(retval));
-        return retval; // EXIT
+    f_retval = esp_wifi_disconnect();
+    if (f_retval != ESP_OK) {
+        ESP_LOGE(TAG, "esp_wifi_connect() err %d %s", f_retval, esp_err_to_name(f_retval));
+        // GOTO
+        goto cleanup;
     }
 
-    retval = esp_wifi_stop();
-    if (retval != ESP_OK) {
-        ESP_LOGE(TAG, "esp_wifi_stop() err %d %s", retval, esp_err_to_name(retval));
-        return retval; // EXIT
+    f_retval = esp_wifi_stop();
+    if (f_retval != ESP_OK) {
+        ESP_LOGE(TAG, "esp_wifi_stop() err %d %s", f_retval, esp_err_to_name(f_retval));
+        // GOTO
+        goto cleanup;
     }
 
     uxBits = xEventGroupWaitBits(wifi_event_group, WIFI_DISCONNECTED_BIT, pdFALSE, pdTRUE, RTOS_DELAY_10SEC);
     if ((uxBits & WIFI_DISCONNECTED_BIT) == 0) {
         ESP_LOGE(TAG, "esp_wifi_disconnect() & esp_wifi_stop() failed to disconnect or stop. Aborting...");
-        return MJD_ERR_ESP_WIFI;
+
+        f_retval = MJD_ERR_ESP_WIFI; // mark error code
+        // GOTO
+        goto cleanup;
     }
 
     ESP_LOGI(TAG, "OK: WIFI disconnected!");
 
-    return ESP_OK;
+    // LABEL
+    cleanup:;
+
+    return f_retval;
 }
 
 bool mjd_wifi_sta_is_connected() {
@@ -279,17 +303,25 @@ bool mjd_wifi_sta_is_connected() {
     // @doc Check wifi_event_group is already init'd (!=NULL). If not then certainly no connection active, and cannot use xEventGroupWaitBits(wifi_event_group) at all)!
     ESP_LOGD(TAG, "%s()", __FUNCTION__);
 
+    bool b_retval = true;
     EventBits_t uxBits;
 
     if (wifi_event_group == NULL) { // Not yet initialized by mjd_wifi_init()
         ESP_LOGD(TAG, "  (ok) NULL PTR wifi_event_group %p", wifi_event_group);
-        return false;
+        b_retval = false;
+        // GOTO
+        goto cleanup;
     }
 
     uxBits = xEventGroupWaitBits(wifi_event_group, WIFI_CONNECTED_BIT, pdFALSE, pdTRUE, RTOS_DELAY_0);
     if ((uxBits & WIFI_CONNECTED_BIT) == 0) {
-        return false;
+        b_retval = false;
+        // GOTO
+        goto cleanup;
     }
 
-    return true;
+    // LABEL
+    cleanup:;
+
+    return b_retval;
 }

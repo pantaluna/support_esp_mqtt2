@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<cdtprojectproperties>
+<section name="org.eclipse.cdt.internal.ui.wizards.settingswizards.IncludePaths">
+<language name="Assembly Source File">
+
+</language>
+<language name="C++ Source File">
+
+</language>
+<language name="C Source File">
+<includepath>C:/myiot/esp/esp-idf/components/console</includepath>
+<includepath>C:/myiot/esp/esp-idf/components/driver/include</includepath>
+<includepath>C:/myiot/esp/esp-idf/components/esp32/include</includepath>
+<includepath>C:/myiot/esp/esp-idf/components/fatfs/src</includepath>
+<includepath>C:/myiot/esp/esp-idf/components/freertos/include</includepath>
+<includepath>C:/myiot/esp/esp-idf/components/json/cJSON</includepath>
+<includepath>C:/myiot/esp/esp-idf/components/log/include</includepath>
+<includepath>C:/myiot/esp/esp-idf/components/lwip/include/lwip</includepath>
+<includepath>C:/myiot/esp/esp-idf/components/mbedtls/include</includepath>
+<includepath>C:/myiot/esp/esp-idf/components/mdns/include</includepath>
+<includepath>C:/myiot/esp/esp-idf/components/newlib/include</includepath>
+<includepath>C:/myiot/esp/esp-idf/components/nvs_flash/include</includepath>
+<includepath>C:/myiot/esp/esp-idf/components/openssl/include</includepath>
+<includepath>C:/myiot/esp/esp-idf/components/soc/include</includepath>
+<includepath>C:/myiot/esp/esp-idf/components/soc/esp32/include</includepath>
+<includepath>C:/myiot/esp/esp-idf/components/spi_flash/include</includepath>
+<includepath>C:/myiot/esp/esp-idf/components/spiffs/include</includepath>
+<includepath>C:/myiot/esp/esp-idf/components/tcpip_adapter/include</includepath>
+<includepath>C:/myiot/esp/esp-idf/components/ulp/include</includepath>
+<includepath>C:/myiot/esp/esp-idf/components/vfs/include</includepath>
+<includepath>C:/myiot/esp/esp-idf/components</includepath>
+
+</language>
+<language name="Object File">
+
+</language>
+</section>
+<section name="org.eclipse.cdt.internal.ui.wizards.settingswizards.Macros">
+<language name="Assembly Source File">
+
+</language>
+<language name="C++ Source File">
+
+</language>
+<language name="C Source File">
+
+</language>
+<language name="Object File">
+
+</language>
+</section>
+</cdtprojectproperties>
