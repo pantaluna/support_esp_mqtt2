@@ -252,8 +252,8 @@ void main_task(void *pvParameter) {
 
         counter_append++;
 
-        // @question yield a little to give time to other tasks???
-        vTaskDelay(RTOS_DELAY_10MILLISEC);
+        // @question Is it required to yield a little to give time to other tasks???
+        /////vTaskDelay(RTOS_DELAY_10MILLISEC);
     }
     printf("\n");
 
@@ -310,7 +310,7 @@ void main_task(void *pvParameter) {
 
         mjd_log_memory_statistics();
 
-        ESP_LOGI(TAG, "MQTT info: LOOP mqtt publish:");
+        ESP_LOGI(TAG, "MQTT info: LOOP mqtt publish (%u times):", MJD_SPIFF_WRITE_NBR_OF_LINES);
 
         cur_line = 0;
         while (fgets(payload, sizeof(payload), _log_fp) != NULL) {
@@ -329,10 +329,10 @@ void main_task(void *pvParameter) {
                 goto section_cleanup;
             }
 
-            // @question is it required to yield a little to give time to other tasks?
+            // avoid triggered watchdog (root cause: gave not enough cpu ticks to other tasks)
             vTaskDelay(RTOS_DELAY_1MILLISEC);
         }
-        printf("\n");
+        printf("\n\n");
 
         // close file
         ESP_LOGI(TAG, "  Close file");
