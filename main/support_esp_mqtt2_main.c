@@ -44,15 +44,15 @@ char *WIFI_PASSWORD = CONFIG_MY_WIFI_PASSWORD;
 #define MY_MQTT_BUFFER_SIZE  (4096)  // @suggested 256 @used 4096 (max payload length)
 #define MY_MQTT_TIMEOUT      (2000)  // @suggested 2000 @used 2000
 
-/*#define MY_MQTT_HOST "broker.shiftr.io"
+#define MY_MQTT_HOST "broker.shiftr.io"
 #define MY_MQTT_PORT "1883"
 #define MY_MQTT_USER "try"
-#define MY_MQTT_PASS "try"*/
+#define MY_MQTT_PASS "try"
 
-#define MY_MQTT_HOST "192.168.0.95" // @important The DNS name "s3..." does not work on an MCU@HomeLAN because it returns the ISP's WAN IP and this IP is not whitelisted in Ubuntu UFW!
+/*#define MY_MQTT_HOST "192.168.0.95" // @important The DNS name "s3..." does not work on an MCU@HomeLAN because it returns the ISP's WAN IP and this IP is not whitelisted in Ubuntu UFW!
 #define MY_MQTT_PORT "12430"
 #define MY_MQTT_USER "zurich"
-#define MY_MQTT_PASS "swiss"
+#define MY_MQTT_PASS "swiss"*/
 
 
 static EventGroupHandle_t mqtt_event_group;
@@ -315,7 +315,7 @@ void main_task(void *pvParameter) {
         cur_line = 0;
         while (fgets(payload, sizeof(payload), _log_fp) != NULL) {
             ++cur_line;
-            printf("#%i ", cur_line); fflush(stdout);
+            printf("ITER#%i ", cur_line); fflush(stdout);
 
             /////ESP_LOGI(TAG, "  esp_mqtt_publish(): topic (%i) %s => payload (%i) %s\n", strlen(topic), topic, strlen(payload), payload);
 
